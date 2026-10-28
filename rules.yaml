@@ -1,0 +1,81 @@
+# local-paper-ai retention rules: defaults for German households.
+# NOT legal advice. Check and adjust them for your situation.
+# The first matching rule wins, so keep "keep_original" rules at the top.
+# verdict:  keep_original | keep_until (needs years) | may_shred
+# category: used by the privacy lock (tax, health, identity, finance are local-only by default)
+# Rules saved from the review page are appended at the end.
+
+- name: personenstandsurkunde
+  category: identity
+  verdict: keep_original
+  match:
+    keywords: [Geburtsurkunde, Heiratsurkunde, Eheurkunde, Sterbeurkunde, Abstammungsurkunde, Lebenspartnerschaftsurkunde]
+- name: notariell
+  category: legal
+  verdict: keep_original
+  match:
+    keywords: [notariell beurkundet, Urkundenrolle, Erbschein, Testament, Notar]
+- name: grundbuch
+  category: property
+  verdict: keep_original
+  match:
+    keywords: [Grundbuchauszug, Grundbuch, Grundschuld]
+- name: fahrzeugbrief
+  category: vehicle
+  verdict: keep_original
+  match:
+    keywords: [Zulassungsbescheinigung Teil II, Fahrzeugbrief]
+- name: zeugnis
+  category: education
+  verdict: keep_original
+  match:
+    keywords: [Abiturzeugnis, Zeugnis der allgemeinen Hochschulreife, Bachelorurkunde, Masterurkunde, Diplomurkunde, Promotionsurkunde, Arbeitszeugnis, Gesellenbrief, Meisterbrief]
+- name: rente
+  category: pension
+  verdict: keep_original
+  match:
+    keywords: [Deutsche Rentenversicherung, Versicherungsverlauf, Rentenbescheid, Renteninformation]
+- name: kredit-buergschaft
+  category: finance
+  verdict: keep_original
+  match:
+    keywords: [Darlehensvertrag, Kreditvertrag, Bürgschaft]
+- name: steuerbescheid
+  category: tax
+  verdict: keep_until
+  years: 10
+  match:
+    document_types: [Steuerbescheid]
+    keywords: [Einkommensteuerbescheid, Steuerbescheid, Bescheid über Einkommensteuer]
+- name: handwerkerrechnung
+  category: property
+  verdict: keep_until
+  years: 2
+  match:
+    keywords: [Handwerkerleistung, Arbeitskosten, Lohnanteil, "§14b UStG", "§ 14b UStG"]
+- name: kaufbeleg-garantie
+  category: purchase
+  verdict: keep_until
+  years: 2
+  match:
+    keywords: [Garantie, Gewährleistung, Kassenbon]
+- name: kontoauszug
+  category: finance
+  verdict: may_shred
+  match:
+    keywords: [Kontoauszug]
+- name: gehaltsabrechnung
+  category: finance
+  verdict: may_shred
+  match:
+    keywords: [Entgeltabrechnung, Gehaltsabrechnung, Lohnabrechnung, Verdienstabrechnung]
+- name: nebenkosten
+  category: household
+  verdict: may_shred
+  match:
+    keywords: [Stromrechnung, Abschlagszahlung, Nebenkostenabrechnung, Jahresabrechnung]
+- name: arzt
+  category: health
+  verdict: may_shred
+  match:
+    keywords: [Arztrechnung, Befund, Krankenkasse, Diagnose]

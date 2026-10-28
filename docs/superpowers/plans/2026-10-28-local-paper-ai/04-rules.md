@@ -16,7 +16,7 @@
   - `add_years(d, years) -> date`
   - `verdict_from_rule(hit, doc) -> Verdict`
 
-- [ ] **Step 1: Write the failing test** `tests/test_rules.py`
+- [x] **Step 1: Write the failing test** `tests/test_rules.py`
 
 ```python
 import shutil
@@ -64,7 +64,7 @@ def test_document_type_match() -> None:
 
 
 def test_first_rule_wins() -> None:
-    hit = match(_doc("Kontoauszug Nr. 4 – Rate aus Ihrem Darlehensvertrag"), RULES)
+    hit = match(_doc("Kontoauszug Nr. 4 - Rate aus Ihrem Darlehensvertrag"), RULES)
     assert hit is not None and hit.rule.name == "kredit-buergschaft"
 
 
@@ -108,12 +108,12 @@ def test_append_rule_roundtrip(tmp_path: Path) -> None:
     assert len(loaded) == len(RULES) + 1
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_rules.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.rules'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/rules.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/rules.py`
 
 ```python
 """Deterministic retention rules loaded from rules.yaml (a top-level YAML list)."""
@@ -299,9 +299,9 @@ def verdict_from_rule(hit: RuleHit, doc: Document) -> Verdict:
     keywords: [Arztrechnung, Befund, Krankenkasse, Diagnose]
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_rules.py -v`
 Expected: `9 passed`
 
-- [ ] **Step 5: Commit and push** with the message `feat: retention rules engine with German defaults` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: retention rules engine with German defaults` (plus the trailer).
