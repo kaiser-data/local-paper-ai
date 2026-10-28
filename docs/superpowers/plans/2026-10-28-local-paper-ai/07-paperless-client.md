@@ -14,7 +14,7 @@
   - `patch_document(doc_id, data)`, `download(doc_id) -> bytes`, `close()`
 - Every method raises `httpx.HTTPError` on failure. The auth header is `Authorization: Token <token>`.
 
-- [ ] **Step 1: Write the failing test** `tests/test_paperless.py`
+- [x] **Step 1: Write the failing test** `tests/test_paperless.py`
 
 ```python
 from datetime import date
@@ -117,12 +117,12 @@ def test_patch_and_download(respx_mock: respx.MockRouter) -> None:
     assert client.download(7) == b"%PDF-1.4"
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_paperless.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.paperless'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/paperless.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/paperless.py`
 
 ```python
 """Thin client for the Paperless-ngx REST API."""
@@ -231,9 +231,9 @@ class PaperlessClient:
 
 Note: the `respx_mock` fixture fails a test when a mocked route is never called, so each test mocks only the endpoints it actually hits.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_paperless.py -v`
 Expected: `6 passed`
 
-- [ ] **Step 5: Commit and push** with the message `feat: paperless-ngx REST client` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: paperless-ngx REST client` (plus the trailer).
