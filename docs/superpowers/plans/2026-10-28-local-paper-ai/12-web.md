@@ -24,7 +24,7 @@
   - `/calendar.ics` returns 404 when `web.calendar_token` is set and the token doesn't match.
   - No JavaScript: plain forms, POST and then a redirect.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/test_ritual.py`:
 ```python
@@ -177,12 +177,12 @@ def test_basic_auth(tmp_path: Path) -> None:
     assert client.get("/calendar.ics").status_code == 200
 ```
 
-- [ ] **Step 2: Run them**
+- [x] **Step 2: Run them**
 
 Run: `uv run pytest tests/test_ritual.py tests/test_web.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.ritual'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/ritual.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/ritual.py`
 
 ```python
 """Group analysed documents for the shred ritual."""
@@ -253,9 +253,11 @@ def ritual_view(state: State, min_copies: int, today: date) -> RitualView:
 
 `src/local_paper_ai/web/app.py`:
 ```python
-"""Web UI: shred ritual, review queue, deadline calendar feed."""
+"""Web UI: shred ritual, review queue, deadline calendar feed.
 
-from __future__ import annotations
+No `from __future__ import annotations` here: FastAPI must resolve the
+Annotated[..., Depends(...)] hints of the nested route functions at definition time.
+"""
 
 import secrets
 from collections.abc import Callable
@@ -483,11 +485,11 @@ form.inline { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 {% endblock %}
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_ritual.py tests/test_web.py -v`
 Expected: `7 passed`
 
-- [ ] **Step 5: Check by eye.** Deferred to Task 15, Step 3, where `serve` exists: open `/` at 375 px width and confirm that nothing scrolls horizontally.
+- [x] **Step 5: Check by eye.** Deferred to Task 15, Step 3, where `serve` exists: open `/` at 375 px width and confirm that nothing scrolls horizontally.
 
-- [ ] **Step 6: Commit and push** with the message `feat: web shred ritual, review queue and calendar feed` (plus the trailer).
+- [x] **Step 6: Commit and push** with the message `feat: web shred ritual, review queue and calendar feed` (plus the trailer).

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Prüfen · local-paper-ai{% endblock %}
+{% block content %}
+<h1>Prüfen</h1>
+{% for s in docs %}
+<div class="item">
+  <div>
+    <strong>{{ s.document.title }}</strong>
+    <div class="meta">{{ s.document.correspondent or "Unbekannt" }} · {{ s.document.created.strftime("%d.%m.%Y") }}</div>
+    <div class="why">{{ s.document.content[:300] }}</div>
+  </div>
+  <form class="inline" method="post" action="/review/{{ s.document.id }}">
+    <select name="verdict" aria-label="Entscheidung">
+      <option value="keep_original">Original aufheben</option>
+      <option value="keep_until">Aufbewahren bis …</option>
+      <option value="may_shred">Darf weg</option>
+    </select>
+    <input name="keep_years" type="number" min="1" max="30" placeholder="Jahre" aria-label="Jahre">
+    <label><input type="checkbox" name="save_rule"> als Regel merken:</label>
+    <input name="keyword" placeholder="Stichwort, z. B. Hausrat" aria-label="Stichwort">
+    <button>Speichern</button>
+  </form>
+</div>
+{% else %}
+<p class="empty">Nichts zu prüfen. 🎉</p>
+{% endfor %}
+{% endblock %}

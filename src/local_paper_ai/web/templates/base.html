@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}local-paper-ai{% endblock %}</title>
+<style>
+:root { --bg:#f7f5f0; --fg:#1d1b18; --muted:#6b665d; --card:#fff; --line:#e3ded3;
+        --accent:#2f6f4f; --on-accent:#fff; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#151412; --fg:#ece8e1; --muted:#a39d92; --card:#1f1d1a; --line:#34312c;
+          --accent:#6fbf93; --on-accent:#10130f; }
+}
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
+main { max-width:760px; margin:0 auto; padding:16px; }
+nav a { margin-right:16px; color:var(--accent); font-weight:600; }
+section { margin:24px 0; }
+h2 { font-size:1.05rem; margin:0 0 8px; }
+.item { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px;
+        margin:8px 0; display:flex; gap:12px; align-items:center; justify-content:space-between;
+        flex-wrap:wrap; }
+.meta, .why, .empty { color:var(--muted); font-size:.875rem; }
+.why { font-style:italic; }
+.stats { font-size:1.2rem; font-weight:600; }
+button { background:var(--accent); color:var(--on-accent); border:0; border-radius:6px;
+         padding:8px 14px; font:inherit; cursor:pointer; }
+input, select { font:inherit; padding:6px; border:1px solid var(--line); border-radius:6px;
+                background:var(--card); color:var(--fg); }
+form.inline { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+</style>
+</head>
+<body><main>
+<nav><a href="/">Entsorgen</a><a href="/review">Prüfen</a></nav>
+{% block content %}{% endblock %}
+</main></body>
+</html>

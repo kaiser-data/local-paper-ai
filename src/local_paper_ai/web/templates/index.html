@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+{% macro row(item, can_shred) %}
+<div class="item">
+  <div>
+    <strong>{{ item.doc.title }}</strong>
+    <div class="meta">{{ item.doc.correspondent or "Unbekannt" }} · {{ item.doc.created.strftime("%d.%m.%Y") }} · {{ item.copies }} Kopien</div>
+    {% if item.analysis.verdict.keep_until %}<div class="meta">Aufbewahren bis {{ item.analysis.verdict.keep_until.strftime("%d.%m.%Y") }}</div>{% endif %}
+    {% for e in item.analysis.verdict.evidence %}<div class="why">{{ e.detail }} »{{ e.quote }}«</div>{% endfor %}
+  </div>
+  {% if can_shred %}<form method="post" action="/shred/{{ item.doc.id }}"><button>Weggeworfen ✓</button></form>{% endif %}
+</div>
+{% endmacro %}
+<p class="stats">{{ view.shredded_pages }} Blatt Papier weg · {{ "%.1f"|format(view.kg) }} kg · {{ view.shredded_docs }} Dokumente</p>
+{% if view.review %}<p><a href="/review">{{ view.review|length }} Dokumente brauchen deine Entscheidung →</a></p>{% endif %}
+<section><h2>✅ Darf weg ({{ view.shred_now|length }})</h2>
+{% for item in view.shred_now %}{{ row(item, True) }}{% else %}<p class="empty">Gerade nichts zu entsorgen.</p>{% endfor %}
+</section>
+<section><h2>⏳ Wartet auf Backup ({{ view.waiting_backup|length }})</h2>
+{% for item in view.waiting_backup %}{{ row(item, False) }}{% else %}<p class="empty">Alles gesichert.</p>{% endfor %}
+</section>
+<section><h2>📦 Original aufheben ({{ view.keep_original|length }})</h2>
+{% for item in view.keep_original %}{{ row(item, False) }}{% else %}<p class="empty">Keine.</p>{% endfor %}
+</section>
+<section><h2>🗓️ Aufbewahren bis … ({{ view.keep_until|length }})</h2>
+{% for item in view.keep_until %}{{ row(item, False) }}{% else %}<p class="empty">Keine.</p>{% endfor %}
+</section>
+{% endblock %}
