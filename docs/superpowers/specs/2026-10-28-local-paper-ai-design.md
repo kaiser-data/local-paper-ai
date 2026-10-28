@@ -1,142 +1,236 @@
 # local-paper-ai — Design
 
 **Date:** 2026-10-28
-**Status:** Draft, awaiting review
+**Status:** Approved (v1 scope: all six features)
 
 ## Goal
 
 Get rid of paper. Scan household paperwork (letters, contracts, invoices,
-certificates, tax documents) with a phone, turn it into searchable, well-named
-PDFs stored in several places, and tell the user for every document whether the
-paper original may be thrown away.
+certificates, tax documents) with any phone, turn it into searchable,
+well-named PDFs stored in several verified places, and answer for every
+document the question no other tool answers: **"May I throw the paper away?"**
+— with a reason, and with any deadline hidden in the letter turned into a
+reminder.
+
+## Positioning
+
+Paperless-ngx (47k★) already does OCR, search and storage. paperless-ai (6k★)
+and paperless-gpt (2.8k★) already do LLM tagging. local-paper-ai does **not**
+rebuild any of that. It is a **companion service for Paperless-ngx** that adds:
+
+1. Retention verdicts with evidence ("may shred / keep original / keep until")
+2. Deadline detection (appeal periods, payment due dates, notice periods)
+3. A provider-agnostic AI adapter, local by default, with per-category privacy locks
+4. An idle gate that only works when a shared box (e.g. Jetson) is free
+5. Verified multi-location backup — nothing is shreddable until ≥2 verified copies exist
+6. A "shred ritual" web page: tick off the papers you binned, watch the pile shrink
+
+It talks to Paperless only via its REST API, so it is a separate program
+(MIT) and works with any existing Paperless install.
 
 ## Constraints
 
-- **Platform-agnostic.** Works with any phone (primary user: Samsung/Android),
-  any desktop OS, any cloud. No iCloud/iOS-only features.
-- **Local processing.** Document contents never leave the user's own hardware.
-  Cloud copies are encrypted client-side.
-- **Runs on a shared Jetson.** The Jetson has another main job. local-paper-ai
-  must stay out of its way: no real-time processing, work only when the device
-  is idle, small resident footprint.
-- **Not real-time.** A scan may take hours or days to be processed. That is fine.
-- **No real documents or personal config in the repository.** Ever.
+- **Platform-agnostic.** Any phone (primary user: Samsung/Android), any
+  desktop OS, any calendar app, any cloud. No iCloud/iOS-only features.
+- **Local by default.** Document contents never leave the user's hardware
+  unless the user explicitly enables a cloud provider for a category.
+  Tax, health and identity documents can never be sent to the cloud.
+- **Shared, small hardware.** Reference target: Jetson Orin Nano 8 GB
+  (unified CPU/GPU memory; CUDA allocations fail instead of slowing down
+  under memory pressure). Must not disturb the box's main workload.
+- **Not real-time.** Processing may lag hours or days.
+- **No real documents or personal config in the repository.**
 
 ## Non-goals (YAGNI)
 
-- Own mobile app or own web UI — Paperless-ngx and existing Android apps cover it.
-- Own OCR or ML classifier — reuse ocrmypdf/Paperless.
-- Multi-user / sharing.
-- Legal advice. Retention rules are defaults the user reviews and owns.
+- Own OCR, own DMS, own mobile app, own LLM tagger (use Paperless /
+  paperless-gpt for titles and tags).
+- Multi-user, sharing, permissions.
+- Legal advice. Retention rules are editable defaults with a disclaimer.
 
 ## Architecture
 
 ```
-Phone                     Jetson (only when idle)                    Storage (several)
-─────                     ───────────────────────                    ─────────────────
-Scan app          ──▶  inbox/ (staging)                       ──▶  1. Paperless archive (Jetson)
-(Paperless mobile      │                                           2. Syncthing → desktop + phone
- app, Google Drive     ├─ idle-gate: feeds ONE file at a time      3. rclone crypt → any cloud
- scan, Samsung         │   into Paperless consume/ when idle
- camera scan)          ├─ Paperless-ngx: OCR (deu+eng),
-   │                   │   classify (learned matching,
-   └─ Syncthing ────▶  │   optional local LLM via Ollama)
-      (or upload)      ├─ filename: 2026-03-14_Finanzamt_Steuerbescheid.pdf
-                       ├─ retention: ✅ may shred · 📦 keep original · ⏳ keep until YYYY
-                       └─ daily report: "papers you can throw away"
+Phone (any)            Box (Jetson / any Linux / Mac)                         Outputs
+───────────            ─────────────────────────────                          ───────
+Scan app ──Syncthing─▶ inbox/
+                         │ idle_gate (one file at a time, only when idle)
+                         ▼
+                       Paperless-ngx consume/ ─▶ OCR, search, archive
+                         │ (REST API)
+                         ▼
+                       local-paper-ai worker
+                         ├─ analyzer: rules + AI adapter → Verdict, Deadlines (with evidence)
+                         ├─ writer: tags + custom fields back to Paperless
+                         ├─ backup: export → targets → sha256 verify → state.db
+                         └─ notifier: ntfy push                                ─▶ phone push
+                       local-paper-ai web (FastAPI)
+                         ├─ /            shred ritual (tick off binned papers) ─▶ any browser
+                         ├─ /review      documents needing a human decision
+                         └─ /calendar.ics deadline feed (subscribe once)       ─▶ any calendar
 ```
 
-## Components
+## Components (package `local_paper_ai`)
 
-Reused (configured, not written):
+Each unit has one job, a small interface, and is testable without the others.
 
-| Component | Role |
+| Module | Responsibility | Interface (sketch) | Depends on |
+|---|---|---|---|
+| `config` | Load + validate `config.yaml` (pydantic) | `load(path) -> Config` | — |
+| `paperless` | Thin REST client: list/get docs, content, tags, custom fields, tasks | `PaperlessClient` | httpx |
+| `metrics` | Read load: CPU, GPU, **free** RAM. Providers: `jetson` (tegrastats/sysfs), `psutil` (generic) | `read() -> Metrics` | psutil |
+| `idle_gate` | Decide idle; feed one inbox file into consume/, wait for task end | `is_idle(m, t) -> bool`, `next_file(inbox, max_wait) -> Path?`, `run_once()` | metrics, paperless |
+| `ai` | Provider-agnostic LLM adapter (see below) | `LLM.extract(text, schema) -> model` | httpx |
+| `rules` | Load `rules.yaml`; deterministic matching on doc type, tags, correspondent, keywords | `match(doc, rules) -> RuleHit?` | — |
+| `analyzer` | Combine rules + AI into `Verdict` and `Deadline[]`, each with evidence; grounding check | `analyze(doc, rules, llm) -> Analysis` | rules, ai |
+| `writer` | Write analysis back as tags + custom fields; idempotent | `apply(client, doc_id, analysis)` | paperless |
+| `backup` | Export PDFs to targets (local dir, rclone remote), verify sha256, record in state | `sync() -> Report`, `verified_copies(doc_id) -> int` | state |
+| `state` | SQLite: processed docs, backup verifications, shred log | `State` | sqlite3 |
+| `notify` | ntfy push (optional) | `send(title, body)` | httpx |
+| `calendar` | Build RFC 5545 feed from deadlines (folded lines, stable UIDs, SEQUENCE) | `build_ics(deadlines) -> str` | — |
+| `web` | FastAPI + Jinja + vendored htmx: ritual, review, calendar | `app` | all of the above |
+| `cli` | `local-paper-ai run | gate | analyze ID | backup | serve | doctor` | Typer | all |
+
+### AI adapter
+
+- One protocol, `LLM.extract(text, schema)`, returning a pydantic model
+  (JSON mode / structured output).
+- Providers:
+  - `openai_compatible`: covers Ollama (`/v1`), llama.cpp server, LiteLLM,
+    vLLM, OpenRouter, OpenAI.
+  - `anthropic`: optional.
+  - `none`: rules only.
+- **Privacy lock:** each request carries the document's category. Cloud
+  providers are refused for categories listed in `privacy.local_only`
+  (default: tax, health, identity, finance), and the call falls back to the
+  local provider or to rules only. The default config has no cloud provider
+  at all.
+- **Small-box discipline:**
+  - Ollama requests set `keep_alive: 0`, so the model is unloaded after each
+    document.
+  - Before a call, the adapter checks free RAM against `model_budget_mb` and
+    skips (retrying later) instead of risking an out-of-memory failure.
+  - Recommended models: `phi4-mini` (~18 tok/s on Orin Nano) for analysis,
+    `qwen3.5:0.8b` as the low-memory fallback.
+- **Grounding:** every AI claim must include a verbatim quote from the
+  document. The analyzer accepts a claim only if the normalized quote is
+  found in the OCR text. Ungrounded claims are dropped, and the document is
+  marked `needs-review`.
+
+### Retention verdict
+
+Order: deterministic rule hit → AI suggestion (grounded) → fallback.
+
+| Verdict | Examples (German household defaults in `rules.yaml`) |
 |---|---|
-| **Paperless-ngx** (Docker, arm64) | OCR via ocrmypdf, full-text search, web UI, tags, document types, correspondents, learned auto-matching, REST API. SQLite backend to save RAM. |
-| **Syncthing** | Phone → Jetson inbox; Jetson export → desktop and phone. Works offline, catches up later. |
-| **rclone** (crypt remote) | Encrypted copy of the export to any cloud the user picks. |
-| **Ollama** (optional, off by default) | Local LLM for better titles/correspondents. Loaded only during a batch, unloaded afterwards (`keep_alive: 0`). Driven by an existing Paperless LLM add-on (e.g. paperless-gpt) rather than custom code. |
-| **ntfy** (optional) | Push notification "N documents processed, M may be shredded". |
+| 📦 `keep_original` | Birth/marriage/death certificates, notarised deeds, wills, land register, Zulassungsbescheinigung Teil II, school/university certificates, pension records, loan/guarantee contracts |
+| ⏳ `keep_until(date)` | Tax assessments (default 10 y), craftsman invoices for property (2 y, §14b UStG), receipts under warranty (warranty period), business records (configurable) |
+| ✅ `may_shred` | Bank statements, utility bills, insurance letters, payslips, general correspondence — once backed up |
 
-Written by us (small Python package `local_paper_ai`, each unit independently testable):
+Safety rules:
+- Unsure (no rule hit, no grounded AI answer) → `keep_original` + `needs-review`.
+- `may_shred` is **displayed as shreddable only when `verified_copies ≥ min_copies` (default 2)**.
+  Until then it shows "waiting for backup".
 
-1. **`idle_gate`** — Watches `inbox/`. Every N minutes reads CPU load, GPU load
-   (Jetson `tegrastats`/sysfs) and free RAM. If all are under the configured
-   thresholds, moves exactly one file into Paperless' `consume/`, waits until
-   Paperless has finished it, then re-checks. Stops after the current document
-   as soon as load rises. Files older than `max_wait_days` (default 3) are
-   prioritised at the next idle moment. Interface: `is_idle(metrics, thresholds) -> bool`,
-   `next_file(inbox) -> Path | None`. Metrics source is pluggable so it also runs
-   on non-Jetson Linux/macOS.
-2. **`retention`** — Rules engine. Reads `rules.yaml`, matches on Paperless
-   document type, tags, correspondent and keywords, returns a verdict:
-   `may_shred`, `keep_original`, or `keep_until(date)`. Pure function, no I/O:
-   `evaluate(document, rules) -> Verdict`. Ships with German household defaults
-   (see below).
-3. **`tagger`** — Runs as a Paperless post-consume step / periodic job. Calls
-   `retention.evaluate` for every new document and writes the verdict back via
-   the Paperless API (tag + custom field `keep_until`). Unclassified documents
-   get `needs-review` instead of a guess.
-4. **`report`** — Builds the daily shred list (HTML + Markdown) into the synced
-   export folder, grouped by verdict, and optionally pushes to ntfy.
-5. **`export`** — Uses Paperless' own exporter / filename format
-   (`{created_year}-{created_month}-{created_day}_{correspondent}_{title}`) into
-   `export/`, then triggers rclone. Syncthing picks up `export/` by itself.
+### Deadline detection
 
-Deployment: one `docker-compose.yml` (Paperless, Redis, Syncthing, the
-local-paper-ai worker; Ollama behind a profile), plus `config.example.yaml`.
+- Regex pre-pass for German date phrases ("zahlbar bis 14.03.2026",
+  "innerhalb eines Monats nach Bekanntgabe", "Kündigungsfrist …"), then the
+  AI resolves relative periods against the document date. Every deadline is
+  grounded with a quote.
+- Output:
+  - Paperless custom field `next_deadline`
+  - entry in `/calendar.ics` (subscribable from Google Calendar, Samsung
+    Calendar, Thunderbird, Outlook)
+  - ntfy push 7 days and 1 day before
+- The calendar feed has no organiser or e-mail fields. It is served only on
+  the LAN, or with a token in the URL.
 
-## Retention defaults (German households)
+### Idle gate
 
-Configurable in `rules.yaml`; shipped with a "not legal advice" notice.
+- Every `interval_s` (default 900 s) the gate reads metrics. It counts as
+  idle when CPU < `cpu_max`, GPU < `gpu_max` and **free** RAM >
+  `ram_free_min_mb`.
+- When idle, it feeds one file, waits for the Paperless task to finish,
+  analyzes that document, then checks again. When load rises, it stops
+  after the current document.
+- Files older than `max_wait_days` go first. Analysis of documents that
+  were uploaded directly to Paperless, bypassing the inbox, is gated the
+  same way.
 
-| Verdict | Examples |
-|---|---|
-| 📦 **Keep original** | Birth/marriage/death certificates, notarised contracts, wills, land register documents, vehicle title (Zulassungsbescheinigung Teil II), school/university certificates and diplomas, pension records (Rentenunterlagen), loan and guarantee contracts |
-| ⏳ **Keep until** | Tax assessments: until final + buffer (default 10 years); craftsman/household-service invoices for property: 2 years (§14b UStG); warranty-relevant purchase receipts: warranty period; self-employed business records: configurable (default 10 years) |
-| ✅ **May shred** | Everything else once scanned and verified: bank statements, utility bills, insurance letters, general correspondence, payslips (digital copy kept) |
+### Backup verification
 
-Rule of thumb built into the engine: if unsure → `keep_original` + `needs-review`.
-Nothing is ever marked shreddable before its PDF exists in at least two
-storage locations.
+- Targets are configured as a list:
+  - `local` (e.g. a Syncthing-shared folder → desktop + phone)
+  - `rclone` (any remote; crypt recommended)
+- Export filename:
+  `{created:%Y-%m-%d}_{correspondent}_{title}.pdf`
+  (sanitized, collision-safe).
+- Verification:
+  - `local`: recompute sha256.
+  - `rclone`: `rclone hashsum`, or `rclone cryptcheck` for crypt remotes.
+  - Results go into `state.db`.
+- The archive inside Paperless counts as one copy.
+
+### Shred ritual (web)
+
+- `/` lists papers that are shreddable now (verified), grouped by verdict.
+  The papers to keep are shown separately as "put into the originals folder".
+- One click marks a paper as binned. This sets the tag `shredded`, logs the
+  date, and updates a counter ("142 sheets gone, 3.1 kg less paper").
+- `/review` lists the `needs-review` documents. You pick a verdict manually,
+  and that choice can be saved as a new rule.
+- The web UI binds to the LAN by default. Optional basic auth.
 
 ## Data flow & error handling
 
-- **Scan arrives while Jetson busy/offline:** stays in phone/inbox via Syncthing; no loss.
-- **OCR or classification fails:** Paperless keeps the file; tagger marks
-  `needs-review`; report lists it under "check manually".
-- **Load rises mid-document:** current document finishes; gate pauses.
-- **Duplicate scan:** Paperless duplicate detection (checksum) rejects it; report mentions it.
-- **Backup target unreachable:** rclone retries next run; report shows last
-  successful backup per target. "May shred" is withheld while fewer than two
-  copies are confirmed.
+| Situation | Behaviour |
+|---|---|
+| Box busy/offline | Scans wait in Syncthing/inbox; nothing lost |
+| OCR fails / empty text | `needs-review`, listed in `/review` |
+| LLM unavailable / OOM risk | Skip AI, retry next idle window; rules-only verdict if a rule hits |
+| Ungrounded AI claim | Dropped; `needs-review` |
+| Backup target unreachable | Retry next run; doc stays "waiting for backup" |
+| Duplicate scan | Paperless rejects (checksum); counted in report |
+| Paperless API down | Worker backs off exponentially; `doctor` reports it |
+| Re-run on same doc | Idempotent: same analysis → no writes |
 
 ## Testing
 
-- Unit tests (pytest): `retention.evaluate` against a table of example documents;
-  `idle_gate.is_idle` / `next_file` with fake metrics and temp dirs; report rendering.
-- Integration: docker-compose up with Paperless, feed sample PDFs (synthetic,
-  committed under `tests/fixtures/`), assert tags/custom fields via API.
-- No real documents in fixtures.
+- **Unit (pytest):**
+  - `rules.match` and `analyzer.analyze` against a table of synthetic
+    documents (rules hit / AI grounded / AI hallucinating / empty text)
+  - `idle_gate` with fake metrics
+  - `calendar.build_ics` (RFC 5545 folding, UIDs)
+  - `backup` with temp dirs
+  - privacy lock: cloud refused for local-only categories
+- **Contract:** `paperless` client against recorded API responses (respx).
+- **Integration (optional, marked):** `docker compose` with real
+  Paperless-ngx plus the synthetic PDFs in `tests/fixtures/`.
+- Quality gate: `ruff`, `mypy --strict` on the package, coverage ≥ 85 %
+  for the pure modules.
 
-## Repository layout
+## Stack & repository layout
+
+Python 3.12, uv, Typer, FastAPI, Jinja2, htmx (vendored), httpx, pydantic,
+psutil, SQLite. Docker image multi-arch (amd64 + arm64).
 
 ```
 local-paper-ai/
-├── docker-compose.yml
+├── pyproject.toml
+├── docker-compose.yml          # paperless-ngx, redis, syncthing, local-paper-ai; ollama profile
 ├── config.example.yaml
-├── rules.yaml                 # retention defaults
+├── rules.yaml                  # retention defaults (DE)
 ├── src/local_paper_ai/
-│   ├── idle_gate.py
-│   ├── retention.py
-│   ├── tagger.py
-│   ├── report.py
-│   └── export.py
-├── tests/
+│   ├── config.py  paperless.py  metrics.py  idle_gate.py  ai/
+│   ├── rules.py   analyzer.py   writer.py   backup.py     state.py
+│   ├── notify.py  calendar.py   cli.py      web/
+├── tests/  (unit/, contract/, integration/, fixtures/ — synthetic only)
 └── docs/
 ```
 
-## Open questions
+## Open items (not blocking implementation)
 
-- Jetson model, free RAM and disk — to verify before deployment (read-only check, with the user's go-ahead).
-- Which cloud(s) for the encrypted copy.
+- Deployment on the real Jetson: model, free RAM and disk must be checked
+  (read-only, with the user's go-ahead) before the first install.
+- Which cloud remote(s) the user wants for the encrypted copy.
