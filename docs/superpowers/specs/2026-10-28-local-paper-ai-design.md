@@ -1,4 +1,4 @@
-# lesspaper — Design
+# local-paper-ai — Design
 
 **Date:** 2026-10-28
 **Status:** Draft, awaiting review
@@ -16,7 +16,7 @@ paper original may be thrown away.
   any desktop OS, any cloud. No iCloud/iOS-only features.
 - **Local processing.** Document contents never leave the user's own hardware.
   Cloud copies are encrypted client-side.
-- **Runs on a shared Jetson.** The Jetson has another main job. lesspaper
+- **Runs on a shared Jetson.** The Jetson has another main job. local-paper-ai
   must stay out of its way: no real-time processing, work only when the device
   is idle, small resident footprint.
 - **Not real-time.** A scan may take hours or days to be processed. That is fine.
@@ -58,7 +58,7 @@ Reused (configured, not written):
 | **Ollama** (optional, off by default) | Local LLM for better titles/correspondents. Loaded only during a batch, unloaded afterwards (`keep_alive: 0`). Driven by an existing Paperless LLM add-on (e.g. paperless-gpt) rather than custom code. |
 | **ntfy** (optional) | Push notification "N documents processed, M may be shredded". |
 
-Written by us (small Python package `lesspaper`, each unit independently testable):
+Written by us (small Python package `local_paper_ai`, each unit independently testable):
 
 1. **`idle_gate`** — Watches `inbox/`. Every N minutes reads CPU load, GPU load
    (Jetson `tegrastats`/sysfs) and free RAM. If all are under the configured
@@ -84,7 +84,7 @@ Written by us (small Python package `lesspaper`, each unit independently testabl
    `export/`, then triggers rclone. Syncthing picks up `export/` by itself.
 
 Deployment: one `docker-compose.yml` (Paperless, Redis, Syncthing, the
-lesspaper worker; Ollama behind a profile), plus `config.example.yaml`.
+local-paper-ai worker; Ollama behind a profile), plus `config.example.yaml`.
 
 ## Retention defaults (German households)
 
@@ -122,11 +122,11 @@ storage locations.
 ## Repository layout
 
 ```
-lesspaper/
+local-paper-ai/
 ├── docker-compose.yml
 ├── config.example.yaml
 ├── rules.yaml                 # retention defaults
-├── src/lesspaper/
+├── src/local_paper_ai/
 │   ├── idle_gate.py
 │   ├── retention.py
 │   ├── tagger.py

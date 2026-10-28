@@ -1,4 +1,4 @@
-# lesspaper
+# local-paper-ai
 
 **Scan it, file it, shred it.** Turn household paperwork into searchable PDFs —
 and know which originals you can finally throw away.
@@ -13,7 +13,7 @@ and know which originals you can finally throw away.
 Built on [Paperless-ngx](https://github.com/paperless-ngx/paperless-ngx),
 Syncthing and rclone.
 
-> Status: design phase — see [the design](docs/superpowers/specs/2026-10-28-lesspaper-design.md).
+> Status: design phase — see [the design](docs/superpowers/specs/2026-10-28-local-paper-ai-design.md).
 
 > Retention rules are defaults, not legal advice.
 
