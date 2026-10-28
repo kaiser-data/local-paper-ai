@@ -10,7 +10,7 @@
   - `Rule`, `match`, `verdict_from_rule`, `add_years`, `load_rules` (Task 4)
 - Produces: `grounded(quote, text) -> bool`, `regex_deadlines(text) -> list[Deadline]`, `analyze(doc, rules, router: Extractor) -> Analysis`. Also `tests/fakes.py::FakeRouter(retention=None, deadlines=None)`, which records `.calls: list[tuple[str, str]]` as (schema name, category).
 
-- [ ] **Step 1: Shared fake** `tests/fakes.py` (Task 8 appends `FakePaperless` to this file)
+- [x] **Step 1: Shared fake** `tests/fakes.py` (Task 8 appends `FakePaperless` to this file)
 
 ```python
 """In-memory fakes shared by the tests."""
@@ -41,7 +41,7 @@ class FakeRouter:
 
 `tests/__init__.py`: an empty file (so `from tests.fakes import …` works).
 
-- [ ] **Step 2: Write the failing test** `tests/test_analyzer.py`
+- [x] **Step 2: Write the failing test** `tests/test_analyzer.py`
 
 ```python
 from datetime import date
@@ -172,12 +172,12 @@ def test_no_deadline_words_skips_deadline_ai() -> None:
     assert router.calls == []
 ```
 
-- [ ] **Step 3: Run it**
+- [x] **Step 3: Run it**
 
 Run: `uv run pytest tests/test_analyzer.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.analyzer'`
 
-- [ ] **Step 4: Implement** `src/local_paper_ai/analyzer.py`
+- [x] **Step 4: Implement** `src/local_paper_ai/analyzer.py`
 
 ```python
 """Combine rules and AI into a verdict and deadlines, each backed by evidence."""
@@ -277,9 +277,9 @@ def _deadlines(doc: Document, router: Extractor, category: str) -> list[Deadline
     return sorted(unique.values(), key=lambda d: d.due)
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `uv run pytest tests/test_analyzer.py -v`
 Expected: `10 passed`. Note: `test_no_deadline_words_skips_deadline_ai` relies on "Kontoauszug Nr. 3" containing none of the hint words. Keep it that way.
 
-- [ ] **Step 6: Commit and push** with the message `feat: analyzer with grounded verdicts and deadline detection` (plus the trailer).
+- [x] **Step 6: Commit and push** with the message `feat: analyzer with grounded verdicts and deadline detection` (plus the trailer).
