@@ -14,7 +14,7 @@
   `mark_shredded(doc_id, pages, now=None)`, `is_shredded(doc_id) -> bool`, `shred_stats() -> tuple[int, int]` (docs, pages),
   `was_notified(doc_id, due: date, kind: str) -> bool`, `mark_notified(doc_id, due, kind)`, `close()`.
 
-- [ ] **Step 1: Write the failing test** `tests/test_state.py`
+- [x] **Step 1: Write the failing test** `tests/test_state.py`
 
 ```python
 from datetime import UTC, date, datetime
@@ -92,12 +92,12 @@ def test_notified(tmp_path: Path) -> None:
     assert not s.was_notified(1, due, "d1")
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_state.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.state'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/state.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/state.py`
 
 ```python
 """SQLite state: analyses, verified backup copies, shred log, sent reminders."""
@@ -247,9 +247,9 @@ class State:
         )
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_state.py -v`
 Expected: `5 passed`
 
-- [ ] **Step 5: Commit and push** with the message `feat: sqlite state store` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: sqlite state store` (plus the trailer).
