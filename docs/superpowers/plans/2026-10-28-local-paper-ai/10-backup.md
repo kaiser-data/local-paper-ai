@@ -16,7 +16,7 @@
   - `BackupReport(exported, copied, failed: list[str])`
   - `sync(source: Downloader, state, targets, export_dir) -> BackupReport`
 
-- [ ] **Step 1: Write the failing test** `tests/test_backup.py`
+- [x] **Step 1: Write the failing test** `tests/test_backup.py`
 
 ```python
 from datetime import date
@@ -110,12 +110,12 @@ def test_sync_reports_failing_target(tmp_path: Path) -> None:
     assert state.verified_copies(42) == 1
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_backup.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.backup'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/backup.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/backup.py`
 
 ```python
 """Export PDFs to every backup target and record verified copies."""
@@ -264,9 +264,9 @@ def sync(source: Downloader, state: State, targets: list[Target], export_dir: Pa
     return report
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_backup.py -v`
 Expected: `5 passed`
 
-- [ ] **Step 5: Commit and push** with the message `feat: verified multi-target backup` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: verified multi-target backup` (plus the trailer).
