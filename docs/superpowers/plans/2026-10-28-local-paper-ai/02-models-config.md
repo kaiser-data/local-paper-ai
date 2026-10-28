@@ -8,7 +8,7 @@
 - Produces (`models`): `VerdictKind = Literal["may_shred","keep_original","keep_until"]`, `EvidenceSource = Literal["rule","ai","regex","manual"]`, pydantic models `Document(id, title, content, created: date, correspondent: str|None, document_type: str|None, tags: list[str], page_count: int|None)`, `Evidence(quote, source, detail="")`, `Verdict(kind, keep_until: date|None, category="unknown", evidence: list[Evidence], needs_review=False)`, `Deadline(due: date, label, evidence: Evidence)`, `Analysis(doc_id, verdict, deadlines: list[Deadline])`.
 - Produces (`config`): `Config` with sections `paperless: PaperlessCfg`, `gate: GateCfg`, `ai: AICfg`, `backup: BackupCfg`, `notify: NotifyCfg`, `web: WebCfg`, and the paths `rules_path`, `state_path`, `export_dir`; `ProviderCfg`; `TargetCfg`; `load(path: Path) -> Config`.
 
-- [ ] **Step 1: Write the failing test** `tests/test_config.py`
+- [x] **Step 1: Write the failing test** `tests/test_config.py`
 
 ```python
 from pathlib import Path
@@ -59,12 +59,12 @@ def test_invalid_provider_kind_rejected(tmp_path: Path) -> None:
         load(path)
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_config.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'local_paper_ai.config'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/models.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/models.py`
 
 ```python
 """Domain types shared by all modules."""
@@ -281,12 +281,12 @@ state_path: /data/lpa/state.db
 export_dir: /data/lpa/export
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_config.py -v`
 Expected: `3 passed`
 
-- [ ] **Step 5: Commit and push**
+- [x] **Step 5: Commit and push**
 
 ```bash
 git add -A

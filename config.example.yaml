@@ -1,0 +1,56 @@
+# local-paper-ai configuration. Copy to config.yaml and adjust.
+# ${VAR} values are read from the environment (see .env.example).
+paperless:
+  url: http://paperless:8000
+  token: ${PAPERLESS_TOKEN}
+  consume_dir: /data/consume
+
+gate:                      # only work when the box is idle
+  inbox_dir: /data/inbox   # Syncthing drops phone scans here
+  interval_s: 900
+  cpu_max: 30              # percent
+  gpu_max: 20              # percent
+  ram_free_min_mb: 3000    # FREE (not available) RAM on Jetson
+  max_wait_days: 3         # older scans ignore CPU/GPU limits (RAM still required)
+  metrics: auto            # auto | jetson | psutil
+
+ai:
+  local_only: [tax, health, identity, finance, unknown]   # never sent to cloud providers
+  providers:
+    - name: ollama
+      kind: openai_compatible
+      base_url: http://ollama:11434/v1
+      model: phi4-mini
+      local: true
+      model_budget_mb: 3500
+      ollama_unload: true
+    # - name: claude            # optional cloud provider, off by default
+    #   kind: anthropic
+    #   model: claude-sonnet-5-5
+    #   api_key: ${ANTHROPIC_API_KEY}
+    #   local: false
+
+backup:
+  min_copies: 2            # the Paperless archive counts as one
+  targets:
+    - name: syncthing
+      kind: local
+      path: /data/export-sync
+    # - name: cloud
+    #   kind: rclone
+    #   path: "mycrypt:local-paper-ai"
+    #   crypt: true
+
+notify:
+  ntfy_url: ""             # e.g. https://ntfy.sh/your-secret-topic
+
+web:
+  host: 0.0.0.0
+  port: 8765
+  calendar_token: ${LPA_CALENDAR_TOKEN}
+  basic_auth_user: ""
+  basic_auth_password: ""
+
+rules_path: /app/rules.yaml
+state_path: /data/lpa/state.db
+export_dir: /data/lpa/export
