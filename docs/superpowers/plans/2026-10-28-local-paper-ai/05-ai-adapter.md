@@ -17,7 +17,7 @@
     - `Router(providers: Sequence[LLM], local_only: Iterable[str])`, which has a `.providers` list and implements `Extractor`
     - `build_router(cfg: AICfg, http, free_mb) -> Router`
 
-- [ ] **Step 1: Write the failing test** `tests/test_ai.py`
+- [x] **Step 1: Write the failing test** `tests/test_ai.py`
 
 ```python
 import json
@@ -140,12 +140,12 @@ def test_build_router_skips_none_kind() -> None:
     assert [p.name for p in router.providers] == ["ollama"]
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_ai.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.ai'`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `src/local_paper_ai/ai/__init__.py`:
 ```python
@@ -431,9 +431,9 @@ def build_router(cfg: AICfg, http: httpx.Client, free_mb: Callable[[], int]) -> 
     return Router(providers, cfg.local_only)
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_ai.py -v && uv run mypy`
 Expected: `10 passed`, mypy success. If mypy complains that `FakeLLM` in the tests doesn't satisfy `LLM`, that is fine: tests are not type-checked (`packages = ["local_paper_ai"]`).
 
-- [ ] **Step 5: Commit and push** with the message `feat: provider-agnostic AI adapter with privacy lock` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: provider-agnostic AI adapter with privacy lock` (plus the trailer).
