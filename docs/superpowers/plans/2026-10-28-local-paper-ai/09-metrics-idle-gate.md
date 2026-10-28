@@ -20,7 +20,7 @@
     - `next_file(inbox, now) -> Path | None`, `is_overdue(path, now, max_wait_days) -> bool`
     - `feed_one(src, consume_dir, timeout_s=1800.0, poll_s=5.0, sleep=time.sleep, clock=time.monotonic) -> bool`
 
-- [ ] **Step 1: Write the failing test** `tests/test_idle_gate.py`
+- [x] **Step 1: Write the failing test** `tests/test_idle_gate.py`
 
 ```python
 import os
@@ -107,12 +107,12 @@ def test_feed_one_times_out_and_avoids_name_collision(tmp_path: Path) -> None:
     assert (consume / "scan-1.pdf").exists()
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_idle_gate.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.idle_gate'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/metrics.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/metrics.py`
 
 ```python
 """Machine load. On a Jetson, FREE RAM is what counts: CUDA allocations fail instead of
@@ -273,9 +273,9 @@ def feed_one(
     return True
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_idle_gate.py -v`
 Expected: `7 passed`
 
-- [ ] **Step 5: Commit and push** with the message `feat: jetson-aware metrics and idle gate` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: jetson-aware metrics and idle gate` (plus the trailer).
