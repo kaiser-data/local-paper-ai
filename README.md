@@ -19,7 +19,7 @@ For AI titles and tags, combine it with
 [paperless-ai](https://github.com/clusterzx/paperless-ai).
 It only talks to Paperless over its REST API.
 
-> Status: v0.1.0 in development. See the [design](docs/superpowers/specs/2026-10-28-local-paper-ai-design.md).
+> Status: v0.1.0, first release. See the [design](docs/superpowers/specs/2026-10-28-local-paper-ai-design.md).
 
 ## How it works
 

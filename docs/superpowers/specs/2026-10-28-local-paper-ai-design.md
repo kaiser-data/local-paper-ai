@@ -1,7 +1,7 @@
 # local-paper-ai — Design
 
 **Date:** 2026-10-28
-**Status:** Approved (v1 scope: all six features)
+**Status:** Implemented (v0.1.0)
 
 ## Goal
 
@@ -87,8 +87,8 @@ Each unit has one job, a small interface, and is testable without the others.
 | `backup` | Export PDFs to targets (local dir, rclone remote), verify sha256, record in state | `sync() -> Report`, `verified_copies(doc_id) -> int` | state |
 | `state` | SQLite: processed docs, backup verifications, shred log | `State` | sqlite3 |
 | `notify` | ntfy push (optional) | `send(title, body)` | httpx |
-| `calendar` | Build RFC 5545 feed from deadlines (folded lines, stable UIDs, SEQUENCE) | `build_ics(deadlines) -> str` | — |
-| `web` | FastAPI + Jinja + vendored htmx: ritual, review, calendar | `app` | all of the above |
+| `ics` | Build RFC 5545 feed from deadlines (folded lines, stable UIDs, SEQUENCE) | `build_ics(deadlines) -> str` | — |
+| `web` | FastAPI + Jinja, plain HTML forms (no JS): ritual, review, calendar | `app` | all of the above |
 | `cli` | `local-paper-ai run | gate | analyze ID | backup | serve | doctor` | Typer | all |
 
 ### AI adapter
@@ -154,7 +154,7 @@ Safety rules:
 - When idle, it feeds one file, waits for the Paperless task to finish,
   analyzes that document, then checks again. When load rises, it stops
   after the current document.
-- Files older than `max_wait_days` go first. Analysis of documents that
+- Files older than `max_wait_days` ignore the CPU/GPU limits (free RAM is still required); files are always fed oldest first. Analysis of documents that
   were uploaded directly to Paperless, bypassing the inbox, is gated the
   same way.
 
@@ -164,8 +164,8 @@ Safety rules:
   - `local` (e.g. a Syncthing-shared folder → desktop + phone)
   - `rclone` (any remote; crypt recommended)
 - Export filename:
-  `{created:%Y-%m-%d}_{correspondent}_{title}.pdf`
-  (sanitized, collision-safe).
+  `{created:%Y-%m-%d}_{correspondent}_{title}_{doc id}.pdf`
+  (sanitized; the document id makes it collision-safe).
 - Verification:
   - `local`: recompute sha256.
   - `rclone`: `rclone hashsum`, or `rclone cryptcheck` for crypt remotes.
@@ -212,7 +212,7 @@ Safety rules:
 
 ## Stack & repository layout
 
-Python 3.12, uv, Typer, FastAPI, Jinja2, htmx (vendored), httpx, pydantic,
+Python 3.12, uv, Typer, FastAPI, Jinja2 (plain HTML forms), httpx, pydantic,
 psutil, SQLite. Docker image multi-arch (amd64 + arm64).
 
 ```
@@ -224,7 +224,7 @@ local-paper-ai/
 ├── src/local_paper_ai/
 │   ├── config.py  paperless.py  metrics.py  idle_gate.py  ai/
 │   ├── rules.py   analyzer.py   writer.py   backup.py     state.py
-│   ├── notify.py  calendar.py   cli.py      web/
+│   ├── notify.py  ics.py  ritual.py  worker.py  cli.py  web/
 ├── tests/  (unit/, contract/, integration/, fixtures/ — synthetic only)
 └── docs/
 ```
