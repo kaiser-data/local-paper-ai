@@ -1,0 +1,13 @@
+# Never commit real documents or personal config
+config.yaml
+.env
+data/
+inbox/
+consume/
+export/
+media/
+*.pdf
+!tests/fixtures/**/*.pdf
+__pycache__/
+.venv/
+graphify-out/
