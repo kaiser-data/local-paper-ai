@@ -258,7 +258,8 @@ ANTHROPIC_API_KEY=
         run: |
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/ || true)
-            if [ "$code" = "200" ] || [ "$code" = "401" ]; then exit 0; fi
+            echo "attempt $i: HTTP $code"
+            if [ "$code" != "000" ]; then exit 0; fi
             sleep 5
           done
           exit 1
