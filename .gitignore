@@ -11,3 +11,7 @@ media/
 __pycache__/
 .venv/
 graphify-out/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage

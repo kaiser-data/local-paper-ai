@@ -7,7 +7,7 @@
 **Interfaces:**
 - Produces: importable package `local_paper_ai` with `__version__ = "0.1.0"`; console script `local-paper-ai` → `local_paper_ai.cli:app` (created in Task 13; until then the script entry exists but is unused).
 
-- [ ] **Step 1: Write `pyproject.toml`**
+- [x] **Step 1: Write `pyproject.toml`**
 
 ```toml
 [project]
@@ -53,6 +53,7 @@ packages = ["src/local_paper_ai"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = ["docs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
@@ -69,7 +70,7 @@ markers = ["integration: needs a live Paperless-ngx (LPA_IT_URL, LPA_IT_TOKEN)"]
 addopts = "-m 'not integration'"
 ```
 
-- [ ] **Step 2: Package, pin, smoke test**
+- [x] **Step 2: Package, pin, smoke test**
 
 `.python-version`:
 ```
@@ -92,12 +93,12 @@ def test_version() -> None:
     assert local_paper_ai.__version__ == "0.1.0"
 ```
 
-- [ ] **Step 3: Install and run**
+- [x] **Step 3: Install and run**
 
 Run: `uv sync && uv run pytest -q && uv run ruff check . && uv run mypy`
 Expected: `1 passed`, ruff `All checks passed!`, mypy `Success: no issues found`. A `uv.lock` is created; commit it.
 
-- [ ] **Step 4: CI workflow** `.github/workflows/ci.yml`
+- [x] **Step 4: CI workflow** `.github/workflows/ci.yml`
 
 ```yaml
 name: ci
@@ -115,9 +116,9 @@ jobs:
       - run: uv run pytest --cov=local_paper_ai --cov-report=term-missing
 ```
 
-- [ ] **Step 5: `.gitignore`.** Make sure it contains `.venv/`, `__pycache__/`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `.coverage`, `data/`, `config.yaml`, `.env`.
+- [x] **Step 5: `.gitignore`.** Make sure it contains `.venv/`, `__pycache__/`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `.coverage`, `data/`, `config.yaml`, `.env`.
 
-- [ ] **Step 6: Commit and push**
+- [x] **Step 6: Commit and push**
 
 ```bash
 git add -A
