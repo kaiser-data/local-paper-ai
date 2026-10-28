@@ -15,7 +15,7 @@
   - `mark_shredded(store, doc_id) -> None`
 - Produces (tests): `tests.fakes.FakePaperless` with `add(doc, tags=None, custom_fields=None)`, `tag_names(doc_id) -> set[str]`, `.patches`, `.downloads`. It also implements `list_document_ids`, `get_document` and `download`.
 
-- [ ] **Step 1: Append to `tests/fakes.py`.** Add `import copy` to the imports at the top, plus `from local_paper_ai.models import Document`.
+- [x] **Step 1: Append to `tests/fakes.py`.** Add `import copy` to the imports at the top, plus `from local_paper_ai.models import Document`.
 
 ```python
 class FakePaperless:
@@ -76,7 +76,7 @@ class FakePaperless:
         return {by_id[f["field"]]: f["value"] for f in self.raw[doc_id]["custom_fields"]}
 ```
 
-- [ ] **Step 2: Write the failing test** `tests/test_writer.py`
+- [x] **Step 2: Write the failing test** `tests/test_writer.py`
 
 ```python
 from datetime import date
@@ -152,12 +152,12 @@ def test_mark_shredded_adds_tag_once() -> None:
     assert len(store.patches) == 1
 ```
 
-- [ ] **Step 3: Run it**
+- [x] **Step 3: Run it**
 
 Run: `uv run pytest tests/test_writer.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.writer'`
 
-- [ ] **Step 4: Implement** `src/local_paper_ai/writer.py`
+- [x] **Step 4: Implement** `src/local_paper_ai/writer.py`
 
 ```python
 """Write analyses back to Paperless as tags and custom fields (idempotent)."""
@@ -235,9 +235,9 @@ def mark_shredded(store: DocumentStore, doc_id: int) -> None:
         store.patch_document(doc_id, {"tags": sorted(tags | {tag})})
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `uv run pytest tests/test_writer.py tests/test_analyzer.py -v`
 Expected: all pass (`5 passed` for writer).
 
-- [ ] **Step 6: Commit and push** with the message `feat: idempotent paperless writer` (plus the trailer).
+- [x] **Step 6: Commit and push** with the message `feat: idempotent paperless writer` (plus the trailer).
