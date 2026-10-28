@@ -1,0 +1,77 @@
+# local-paper-ai stack. Works on amd64 and arm64 (Jetson, Raspberry Pi, NAS, desktop).
+#   cp config.example.yaml config.yaml && cp .env.example .env   # then edit both
+#   docker compose up -d                  # without local AI
+#   docker compose --profile ai up -d     # with Ollama
+x-lpa: &lpa
+  build: .
+  restart: unless-stopped
+  depends_on: [paperless]
+  env_file: .env
+  volumes:
+    - ./config.yaml:/config/config.yaml:ro
+    - ./rules.yaml:/app/rules.yaml            # writable: the review page appends rules
+    - ./data/inbox:/data/inbox
+    - ./data/consume:/data/consume
+    - ./data/export-sync:/data/export-sync
+    - ./data/lpa:/data/lpa
+    - ${RCLONE_CONFIG_DIR:-./data/rclone}:/root/.config/rclone:ro
+
+services:
+  broker:
+    image: docker.io/library/redis:7
+    restart: unless-stopped
+    volumes: [redisdata:/data]
+
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:${PAPERLESS_TAG:-latest}   # pin a version in .env
+    restart: unless-stopped
+    depends_on: [broker]
+    ports: ["8000:8000"]
+    env_file: .env
+    environment:
+      PAPERLESS_REDIS: redis://broker:6379
+      PAPERLESS_OCR_LANGUAGE: deu+eng
+      PAPERLESS_TIME_ZONE: Europe/Berlin
+      PAPERLESS_FILENAME_FORMAT: "{{ created_year }}/{{ correspondent }}/{{ created }}_{{ title }}"
+      PAPERLESS_WEBSERVER_WORKERS: 1      # small-box footprint
+      PAPERLESS_TASK_WORKERS: 1
+      PAPERLESS_THREADS_PER_WORKER: 1
+    volumes:
+      - paperless-data:/usr/src/paperless/data
+      - paperless-media:/usr/src/paperless/media
+      - ./data/consume:/usr/src/paperless/consume
+
+  syncthing:
+    image: docker.io/syncthing/syncthing:1
+    restart: unless-stopped
+    ports: ["8384:8384", "22000:22000/tcp", "22000:22000/udp", "21027:21027/udp"]
+    volumes:
+      - syncthing-config:/var/syncthing
+      - ./data/inbox:/data/inbox            # phone -> box
+      - ./data/export-sync:/data/export-sync  # box -> desktop + phone
+
+  worker:
+    <<: *lpa
+    command: ["local-paper-ai", "run"]
+
+  web:
+    <<: *lpa
+    command: ["local-paper-ai", "serve"]
+    ports: ["8765:8765"]
+
+  ollama:
+    profiles: [ai]
+    # On a Jetson use the jetson-containers image (dustynv/ollama) for CUDA instead.
+    image: docker.io/ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: "0"          # unload after every request
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    volumes: [ollama:/root/.ollama]
+
+volumes:
+  redisdata:
+  paperless-data:
+  paperless-media:
+  syncthing-config:
+  ollama:

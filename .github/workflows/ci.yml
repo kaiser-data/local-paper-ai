@@ -11,3 +11,46 @@ jobs:
       - run: uv run ruff check .
       - run: uv run mypy
       - run: uv run pytest --cov=local_paper_ai --cov-report=term-missing
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+      paperless:
+        image: ghcr.io/paperless-ngx/paperless-ngx:latest
+        env:
+          PAPERLESS_REDIS: redis://redis:6379
+          PAPERLESS_ADMIN_USER: it
+          PAPERLESS_ADMIN_PASSWORD: it-password
+          PAPERLESS_SECRET_KEY: ci-only-not-secret
+        ports: ["8000:8000"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - name: Wait for Paperless
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/ || true)
+            if [ "$code" = "200" ] || [ "$code" = "401" ]; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+      - name: Run live test
+        run: |
+          token=$(curl -sf -X POST -d username=it -d password=it-password \
+            http://localhost:8000/api/token/ | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')
+          LPA_IT_URL=http://localhost:8000 LPA_IT_TOKEN="$token" uv run pytest -m integration -v

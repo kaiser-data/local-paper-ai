@@ -8,7 +8,7 @@
 - Consumes: CLI commands `run` and `serve` (Task 13); `PaperlessClient`, `analyze`, `apply`, `Router`, `load_rules`.
 - Produces: an image that runs `local-paper-ai run`/`serve`; a compose stack; a CI job that proves the whole path against a **real** Paperless-ngx.
 
-- [ ] **Step 1: Live integration test** `tests/integration/test_paperless_live.py`
+- [x] **Step 1: Live integration test** `tests/integration/test_paperless_live.py`
 
 ```python
 """End-to-end against a real Paperless-ngx. Run with: pytest -m integration."""
@@ -94,7 +94,7 @@ def test_upload_analyze_and_tag() -> None:
 Run: `uv run pytest -q`
 Expected: the integration test is **deselected** by the default `-m 'not integration'`, so the unit tests pass as before.
 
-- [ ] **Step 2: Container** `Dockerfile`
+- [x] **Step 2: Container** `Dockerfile`
 
 ```dockerfile
 FROM python:3.12-slim
@@ -124,7 +124,7 @@ config.yaml
 .ruff_cache
 ```
 
-- [ ] **Step 3: Compose stack** `docker-compose.yml`
+- [x] **Step 3: Compose stack** `docker-compose.yml`
 
 ```yaml
 # local-paper-ai stack. Works on amd64 and arm64 (Jetson, Raspberry Pi, NAS, desktop).
@@ -222,7 +222,7 @@ LPA_CALENDAR_TOKEN=
 ANTHROPIC_API_KEY=
 ```
 
-- [ ] **Step 4: CI jobs.** Append them to `.github/workflows/ci.yml` under `jobs:`.
+- [x] **Step 4: CI jobs.** Append them to `.github/workflows/ci.yml` under `jobs:`.
 
 ```yaml
   docker:
@@ -269,7 +269,7 @@ ANTHROPIC_API_KEY=
           LPA_IT_URL=http://localhost:8000 LPA_IT_TOKEN="$token" uv run pytest -m integration -v
 ```
 
-- [ ] **Step 5: README.** Replace `README.md` with a user guide covering these sections, in this order:
+- [x] **Step 5: README.** Replace `README.md` with a user guide covering these sections, in this order:
   1. **Title and pitch.** Keep the current pitch and bullet list. Say that it is a companion for Paperless-ngx, and that tagging/titles can come from paperless-gpt or paperless-ai.
   2. **How it works.** Use the architecture diagram from the spec.
   3. **Quick start.**
@@ -299,6 +299,6 @@ ANTHROPIC_API_KEY=
   11. **Development.** The `uv` commands, plus `pytest -m integration` with `LPA_IT_URL`/`LPA_IT_TOKEN`.
   12. **License.** MIT.
 
-- [ ] **Step 6: Verify locally what can be verified here.** Run `uv run ruff format . && uv run ruff check . && uv run mypy && uv run pytest -q`. All must pass. Docker isn't installed on the dev Mac, so the CI `docker` and `integration` jobs are the proof for those parts.
+- [x] **Step 6: Verify locally what can be verified here.** Run `uv run ruff format . && uv run ruff check . && uv run mypy && uv run pytest -q`. All must pass. Docker isn't installed on the dev Mac, so the CI `docker` and `integration` jobs are the proof for those parts.
 
-- [ ] **Step 7: Commit and push** with the message `feat: docker deployment, live integration test and user guide` (plus the trailer). Then run `gh run watch --exit-status` (or `gh run list --limit 1` until it finishes) and confirm all three jobs (`test`, `docker`, `integration`) are green. If `integration` fails, read the log (`gh run view --log-failed`) and fix the cause. Do not skip the test.
+- [x] **Step 7: Commit and push** with the message `feat: docker deployment, live integration test and user guide` (plus the trailer). Then run `gh run watch --exit-status` (or `gh run list --limit 1` until it finishes) and confirm all three jobs (`test`, `docker`, `integration`) are green. If `integration` fails, read the log (`gh run view --log-failed`) and fix the cause. Do not skip the test.
