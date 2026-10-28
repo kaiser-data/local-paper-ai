@@ -11,7 +11,7 @@
   - `notify`: `send(http, ntfy_url, title, message) -> bool`, `Reminder(doc_id, due, kind, title, message)`, `due_reminders(state, today) -> list[Reminder]`, `send_reminders(http, ntfy_url, state, today) -> int`
 - Calendar privacy: no ORGANIZER/ATTENDEE fields, no e-mail addresses.
 
-- [ ] **Step 1: Write the failing test** `tests/test_ics_notify.py`
+- [x] **Step 1: Write the failing test** `tests/test_ics_notify.py`
 
 ```python
 import json
@@ -99,12 +99,12 @@ def test_send_reminders_marks_notified(tmp_path: Path, respx_mock: respx.MockRou
     assert send_reminders(httpx.Client(), "", state, today) == 0
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `uv run pytest tests/test_ics_notify.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.ics'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/ics.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/ics.py`
 
 ```python
 """RFC 5545 deadline feed. Subscribe once from any calendar app."""
@@ -262,9 +262,9 @@ def send_reminders(http: httpx.Client, ntfy_url: str, state: State, today: date)
     return sent
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_ics_notify.py -v`
 Expected: `8 passed`
 
-- [ ] **Step 5: Commit and push** with the message `feat: deadline calendar feed and ntfy reminders` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: deadline calendar feed and ntfy reminders` (plus the trailer).
