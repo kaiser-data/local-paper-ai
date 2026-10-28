@@ -18,7 +18,7 @@
   - `cli.app` (Typer), with the commands `run`, `once`, `gate-status`, `analyze ID [--write]`, `backup`, `serve` and `doctor`. Each takes `--config/-c` (env `LPA_CONFIG`, default `config.yaml`).
 - Cycle order: reminders are sent first, even when the box is busy. Only when it is idle: feed scans one at a time while it stays idle → analyze new documents (re-checking idle between documents) → back up.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/test_worker.py`:
 ```python
@@ -201,12 +201,12 @@ def test_doctor_reports_unreachable_paperless(tmp_path: Path, respx_mock: respx.
     assert "✓ Regeln gültig" in result.output
 ```
 
-- [ ] **Step 2: Run them**
+- [x] **Step 2: Run them**
 
 Run: `uv run pytest tests/test_worker.py tests/test_cli.py -v`
 Expected: FAIL with `No module named 'local_paper_ai.worker'`
 
-- [ ] **Step 3: Implement** `src/local_paper_ai/worker.py`
+- [x] **Step 3: Implement** `src/local_paper_ai/worker.py`
 
 ```python
 """One worker cycle: reminders, then (only when idle) feed scans, analyze, back up."""
@@ -349,6 +349,7 @@ Note: the first file and the first document after an open gate need no re-check.
 
 from __future__ import annotations
 
+import functools
 import logging
 import shutil
 import time
@@ -459,6 +460,10 @@ def _writable(path: Path) -> None:
     probe.unlink()
 
 
+def _get_ok(url: str) -> None:
+    httpx.get(url, timeout=10).raise_for_status()
+
+
 def _require(value: Any, message: str) -> None:
     if not value:
         raise RuntimeError(message)
@@ -482,20 +487,20 @@ def doctor(config: ConfigOpt = DEFAULT_CONFIG) -> None:
     check("Paperless erreichbar", _client(cfg).ping)
     check("Regeln gültig", lambda: load_rules(cfg.rules_path))
     for folder in (cfg.gate.inbox_dir, cfg.paperless.consume_dir, cfg.export_dir):
-        check(f"Ordner beschreibbar: {folder}", lambda folder=folder: _writable(folder))
+        check(f"Ordner beschreibbar: {folder}", functools.partial(_writable, folder))
     for p in cfg.ai.providers:
         if p.kind == "openai_compatible":
             url = f"{p.base_url.rstrip('/')}/models"
-            check(f"KI {p.name}", lambda url=url: httpx.get(url, timeout=10).raise_for_status())
+            check(f"KI {p.name}", functools.partial(_get_ok, url))
     if any(t.kind == "rclone" for t in cfg.backup.targets):
         check("rclone installiert", lambda: _require(shutil.which("rclone"), "not on PATH"))
     if problems:
         raise typer.Exit(1)
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `uv run pytest tests/test_worker.py tests/test_cli.py -v && uv run mypy`
-Expected: `8 passed`, mypy success. If mypy reports that `lambda folder=folder: …` has an untyped default, replace those lambdas with small `def` closures that take a typed default parameter.
+Expected: `8 passed`, mypy success.
 
-- [ ] **Step 5: Commit and push** with the message `feat: worker cycle and CLI` (plus the trailer).
+- [x] **Step 5: Commit and push** with the message `feat: worker cycle and CLI` (plus the trailer).
